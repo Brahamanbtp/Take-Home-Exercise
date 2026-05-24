@@ -1,14 +1,20 @@
 import { ReservationStatus } from '@prisma/client/index';
 import type { Prisma } from '@prisma/client/index';
 import { conflict, gone } from './api';
+import { hasDatabaseUrl } from './db';
 import { isExpired } from './dates';
-import { prisma } from './prisma';
+import { getPrisma } from './prisma';
 
 const HOLD_MINUTES = 10;
 
 type Tx = Prisma.TransactionClient;
 
 export async function cleanupExpiredReservations() {
+  if (!hasDatabaseUrl()) {
+    return;
+  }
+
+  const prisma = getPrisma();
   const expiredReservations = await prisma.reservation.findMany({
     where: { status: ReservationStatus.pending, expiresAt: { lte: new Date() } },
     select: { id: true, productId: true, warehouseId: true, quantity: true },
@@ -54,6 +60,11 @@ export async function cleanupExpiredReservations() {
 }
 
 export async function reserveStock(input: { productId: string; warehouseId: string; quantity: number }) {
+  if (!hasDatabaseUrl()) {
+    conflict('DATABASE_URL is not configured.');
+  }
+
+  const prisma = getPrisma();
   return prisma.$transaction(async (tx: Tx) => reserveStockInTx(tx, input));
 }
 
@@ -101,6 +112,11 @@ export async function reserveStockInTx(tx: Tx, input: { productId: string; wareh
 }
 
 export async function confirmReservation(id: string) {
+  if (!hasDatabaseUrl()) {
+    conflict('DATABASE_URL is not configured.');
+  }
+
+  const prisma = getPrisma();
   return prisma.$transaction(async (tx: Tx) => confirmReservationInTx(tx, id));
 }
 
@@ -169,6 +185,11 @@ export async function confirmReservationInTx(tx: Tx, id: string) {
 }
 
 export async function releaseReservation(id: string) {
+  if (!hasDatabaseUrl()) {
+    conflict('DATABASE_URL is not configured.');
+  }
+
+  const prisma = getPrisma();
   return prisma.$transaction(async (tx: Tx) => releaseReservationInTx(tx, id));
 }
 
