@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client/index';
 import { createHash } from 'node:crypto';
 import { conflict, jsonResponse } from './api';
-import { prisma } from './prisma';
+import { getPrisma } from './prisma';
 
 type IdempotentResult<T> = {
   status: number;
@@ -31,6 +31,7 @@ export async function runIdempotentOperation<T>(options: {
 
   const [lockA, lockB] = lockKey(options.route, key);
 
+  const prisma = getPrisma();
   return prisma.$transaction(async (tx) => {
     await tx.$executeRaw`
       SELECT pg_advisory_xact_lock(${lockA}, ${lockB})
