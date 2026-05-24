@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Countdown } from '@/components/countdown';
+import { hasDatabaseUrl } from '@/lib/db';
 import { ReservationActions } from '@/components/reservation-actions';
 import { getReservationState } from '@/lib/data';
 
@@ -11,6 +12,20 @@ export default async function ReservationPage({ params }: { params: Promise<{ id
   const reservation = await getReservationState(id);
 
   if (!reservation) {
+    if (!hasDatabaseUrl()) {
+      return (
+        <main className="mx-auto min-h-screen max-w-3xl px-6 py-12">
+          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-8 text-amber-900 shadow-soft">
+            <p className="text-sm font-semibold uppercase tracking-[0.25em]">Database not configured</p>
+            <h1 className="mt-3 text-3xl font-semibold text-amber-950">Reservation unavailable</h1>
+            <p className="mt-3 text-sm leading-6">
+              Set `DATABASE_URL` to a hosted Postgres connection string to view and manage reservations.
+            </p>
+          </div>
+        </main>
+      );
+    }
+
     notFound();
   }
 
