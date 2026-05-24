@@ -1,10 +1,16 @@
 import { ReservationStatus } from '@prisma/client/index';
-import { prisma } from './prisma';
+import { hasDatabaseUrl } from './db';
+import { getPrisma } from './prisma';
 import { cleanupExpiredReservations } from './reservations';
 
 export async function getProducts() {
+  if (!hasDatabaseUrl()) {
+    return [];
+  }
+
   await cleanupExpiredReservations();
 
+  const prisma = getPrisma();
   const products = await prisma.product.findMany({
     orderBy: { createdAt: 'asc' },
     include: {
@@ -25,10 +31,20 @@ export async function getProducts() {
 }
 
 export async function getWarehouses() {
+  if (!hasDatabaseUrl()) {
+    return [];
+  }
+
+  const prisma = getPrisma();
   return prisma.warehouse.findMany({ orderBy: { createdAt: 'asc' } });
 }
 
 export async function getReservation(id: string) {
+  if (!hasDatabaseUrl()) {
+    return null;
+  }
+
+  const prisma = getPrisma();
   await cleanupExpiredReservations();
 
   return prisma.reservation.findUnique({
